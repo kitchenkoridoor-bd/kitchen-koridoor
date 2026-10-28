@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>দোকানের বাকির হিসাব</title>
+    <!-- SheetJS CDN for Excel Generation -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #f5f5f5;
+            padding: 15px;
+            color: #333;
+        }
+        #lockScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #8b0032;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .lock-box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .lock-box h3 {
+            color: #8b0032;
+            margin-bottom: 15px;
+        }
+        .lock-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h2, h3 {
+            text-align: center;
+            color: #8b0032;
+            margin-bottom: 20px;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1 1 45%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            background: #f9f9f9;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #555;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #8b0032;
+            color: #fff;
+            border-color: #8b0032;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .item-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .item-row input {
+            flex: 1;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #8b0032;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #8b0032;
+            border: 1px dashed #8b0032;
+        }
+        .btn-danger {
+            background: #d32f2f;
+            color: #fff;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .summary-box {
+            background: #fafafa;
+            border: 1px solid #eee;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .summary-line.total {
+            border-top: 2px solid #333;
+            padding-top: 8px;
+            font-size: 16px;
+            color: #8b0032;
+        }
+        .cust-list {
+            list-style: none;
+        }
+        .cust-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .cust-item:hover {
+            background-color: #fcfcfc;
+        }
+        .due-text {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .no-due-text {
+            color: #388e3c;
+            font-weight: bold;
+        }
+        .receipt-card {
+            background: #fff;
+            border: 1px dashed #8b0032;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .receipt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            color: #8b0032;
+        }
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            color: #555;
+        }
+        .back-btn {
+            background: #666;
+            margin-bottom: 15px;
+        }
+        .backup-sec {
+            margin-top: 25px;
+            border-top: 2px solid #eee;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="lockScreen">
+    <div class="lock-box">
+        <h3>🔒 সফটওয়্যার লক</h3>
+        <p style="margin-bottom:12px; font-size:13px; color:#555;">গোপন পাসওয়ার্ড দিন</p>
+        <input type="password" id="lockPassInput" placeholder="পাসওয়ার্ড লিখুন..." onkeypress="handlePassKey(event)">
+        <button class="btn" onclick="checkPassword()">আনলক করুন</button>
+    </div>
+</div>
+
+<div class="container" id="mainAppContainer" style="display:none;">
+    <h2>দোকানের বাকির হিসাব</h2>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('addCust')">গ্রাহক যোগ</button>
+        <button class="tab-btn" onclick="switchTab('newDue')">নতুন বাকি</button>
+        <button class="tab-btn" onclick="switchTab('payment')">জমা নিন</button>
+        <button class="tab-btn" onclick="switchTab('custList')">গ্রাহক তালিকা</button>
+        <button class="tab-btn" onclick="switchTab('report')">আজকের রিপোর্ট</button>
+    </div>
+
+    <div id="addCust" class="tab-content active">
+        <h3>নতুন গ্রাহক যোগ করুন</h3>
+        <div class="form-group">
+            <label>গ্রাহকের নাম</label>
+            <input type="text" id="custName" placeholder="নাম লিখুন...">
+        </div>
+        <div class="form-group">
+            <label>মোবাইল নম্বর</label>
+            <input type="text" id="custPhone" placeholder="মোবাইল নম্বর...">
+        </div>
+        <div class="form-group">
+            <label>পুরনো বকেয়া / প্রারম্ভিক বকেয়া (টাকা)</label>
+            <input type="number" id="custOpeningBalance" placeholder="০ বা আগের বকেয়া থাকলে তা লিখুন" value="0">
+        </div>
+        <button class="btn" onclick="addCustomer()">গ্রাহক সংরক্ষণ করুন</button>
+    </div>
+
+    <div id="newDue" class="tab-content">
+        <h3>নতুন বিক্রি / বাকি</h3>
+        <div class="form-group">
+            <label>গ্রাহক</label>
+            <select id="dueCustSelect" onchange="calculateDueSummary()"></select>
+        </div>
+        <div class="form-group">
+            <label>তারিখ</label>
+            <input type="date" id="dueDate">
+        </div>
+        
+        <div id="itemsContainer">
+            <div class="item-row">
+                <input type="text" placeholder="পণ্যের নাম" class="item-name">
+                <input type="number" placeholder="দাম" class="item-price" oninput="calculateDueSummary()">
+                <input type="number" placeholder="পরিমাণ" class="item-qty" value="1" oninput="calculateDueSummary()">
+            </div>
+        </div>
+        <button class="btn btn-outline" onclick="addItemRow()">+ পণ্য যোগ করুন</button>
+
+        <div class="summary-box">
+            <div class="summary-line">
+                <span>সর্বমোট বিল</span>
+                <span>৳ <span id="lblTotalBill">0</span></span>
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+                <label>জমা (এখন কত টাকা দিল)</label>
+                <input type="number" id="paidAmount" value="0" oninput="calculateDueSummary()">
+            </div>
+            <div class="form-group">
+                <label>কে টাকা দিল (নাম)</label>
+                <input type="text" id="payerName" placeholder="যেমন: করিম">
+            </div>
+            <div class="form-group">
+                <label>কে জমা রাখল (নাম)</label>
+                <input type="text" id="receiverName" placeholder="যেমন: অর্ণব">
+            </div>
+            <div class="summary-line">
+                <span>এই বিলের বাকি</span>
+                <span>৳ <span id="lblCurrentDue">0</span></span>
+            </div>
+            <div class="summary-line">
+                <span>আগের বাকি</span>
+                <span>৳ <span id="lblPreviousDue">0</span></span>
+            </div>
+            <div class="summary-line total">
+                <span>মোট বর্তমান বাকি</span>
+                <span>৳ <span id="lblFinalDue">0</span></span>
+            </div>
+        </div>
+        <button class="btn" onclick="saveDueTransaction()">হিসাব সংরক্ষণ করুন</button>
+    </div>
+
+    <div id="payment" class="tab-content">
+        <h3>বাকি টাকা জমা নিন</h3>
+        <div class="form-group">
+            <label>গ্রাহক</label>
+            <select id="payCustSelect" onchange="updatePayPreviousDue()"></select>
+        </div>
+        <div class="form-group">
+            <label>তারিখ</label>
+            <input type="date" id="payDate">
+        </div>
+        <div class="form-group">
+            <label>জমা টাকার পরিমাণ</label>
+            <input type="number" id="payAmount" placeholder="টাকার পরিমাণ..." oninput="updatePaySummary()">
+        </div>
+        <div class="form-group">
+            <label>কে টাকা দিল (নাম)</label>
+            <input type="text" id="payPayerName" placeholder="যেমন: করিম">
+        </div>
+        <div class="form-group">
+            <label>কে জমা রাখল (নাম)</label>
+            <input type="text" id="payReceiverName" placeholder="যেমন: অর্ণব">
+        </div>
+        <div class="summary-box">
+            <div class="summary-line">
+                <span>আগের বাকি</span>
+                <span>৳ <span id="lblPayPrevDue">0</span></span>
+            </div>
+            <div class="summary-line total">
+                <span>জমার পর অবশিষ্ট বাকি</span>
+                <span>৳ <span id="lblPayAfterDue">0</span></span>
+            </div>
+        </div>
+        <button class="btn" onclick="savePayment()">জমা সংরক্ষণ করুন</button>
+    </div>
+
+    <div id="custList" class="tab-content">
+        <div id="listSubTab">
+            <h3>গ্রাহক তালিকা</h3>
+            <div class="form-group">
+                <input type="text" id="searchCust" placeholder="গ্রাহক খুঁজুন..." oninput="renderCustList()">
+            </div>
+            <ul class="cust-list" id="custListUl"></ul>
+        </div>
+        <div id="detailSubTab" style="display:none;">
+            <button class="btn back-btn" onclick="hideCustDetails()">← পেছনে যান</button>
+            <h3 id="detCustName">গ্রাহকের নাম</h3>
+            <p id="detCustPhone" style="text-align:center; color:#666; margin-bottom:10px;"></p>
+            <div class="summary-box" style="margin-bottom:15px;">
+                <div class="summary-line">
+                    <span>প্রারম্ভিক বকেয়া (পুরনো বাকি):</span>
+                    <span>৳ <span id="detCustOpening">0</span></span>
+                </div>
+                <div class="summary-line total">
+                    <span>মোট বর্তমান বাকি:</span>
+                    <span>৳ <span id="detCustDue">0</span></span>
+                </div>
+            </div>
+            <h4>লেনদেনের রসিদ তালিকা</h4>
+            <div id="detHistoryList" style="margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <div id="report" class="tab-content">
+        <h3>দৈনিক রিপোর্ট ও রসিদ</h3>
+        <div class="form-group">
+            <label>তারিখ</label>
+            <input type="date" id="reportDate" onchange="renderRep()">
+        </div>
+        <div class="summary-box" style="margin-bottom:15px;">
+            <div class="summary-line">
+                <span>মোট বিক্রি</span>
+                <span>৳ <span id="repTotalSales">0</span></span>
+            </div>
+            <div class="summary-line">
+                <span>মোট জমা</span>
+                <span>৳ <span id="repTotalPaid">0</span></span>
+            </div>
+            <div class="summary-line total">
+                <span>মোট বাকি</span>
+                <span>৳ <span id="repTotalDue">0</span></span>
+            </div>
+        </div>
+
+        <h4>আজকের সকল লেনদেনের রসিদ</h4>
+        <div id="repTxnDetailsList" style="margin-top:10px;"></div>
+
+        <div class="backup-sec">
+            <h4>📊 এক্সেল রিপোর্ট ব্যাকআপ</h4>
+            <button class="btn" style="background:#107c41;" onclick="downloadExcelReport()">📥 এক্সেল ফাইল ডাউনলোড করুন (.xlsx)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const CORRECT_PASSWORD = "Ar@nob#2026$";
+
+    function checkPassword() {
+        const val = document.getElementById('lockPassInput').value;
+        if (val === CORRECT_PASSWORD) {
+            document.getElementById('lockScreen').style.display = 'none';
+            document.getElementById('mainAppContainer').style.display = 'block';
+            init();
+        } else {
+            alert('ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।');
+            document.getElementById('lockPassInput').value = '';
+            document.getElementById('lockPassInput').focus();
+        }
+    }
+
+    function handlePassKey(e) {
+        if (e.key === 'Enter') {
+            checkPassword();
+        }
+    }
+
+    let appData = {
+        customers: [],
+        transactions: []
+    };
+
+    function init() {
+        const saved = localStorage.getItem("bakery_ledger_data");
+        if (saved) {
+            try { appData = JSON.parse(saved); } catch(e){}
+        }
+        if (!appData.customers) appData.customers = [];
+        if (!appData.transactions) appData.transactions = [];
+
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dueDate').value = today;
+        document.getElementById('payDate').value = today;
+        document.getElementById('reportDate').value = today;
+
+        populateCustSelects();
+        renderCustList();
+        renderRep();
+    }
+
+    function saveData() {
+        localStorage.setItem("bakery_ledger_data", JSON.stringify(appData));
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        event.target.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+
+        if (tabId === 'custList') {
+            hideCustDetails();
+            renderCustList();
+        } else if (tabId === 'report') {
+            renderRep();
+        } else if (tabId === 'newDue' || tabId === 'payment') {
+            populateCustSelects();
+        }
+    }
+
+    function addCustomer() {
+        const name = document.getElementById('custName').value.trim();
+        const phone = document.getElementById('custPhone').value.trim();
+        const openingBalance = parseFloat(document.getElementById('custOpeningBalance').value) || 0;
+
+        if (!name) return alert('গ্রাহকের নাম দিন');
+
+        const newCust = { id: Date.now(), name, phone, openingBalance };
+        appData.customers.push(newCust);
+        saveData();
+
+        document.getElementById('custName').value = '';
+        document.getElementById('custPhone').value = '';
+        document.getElementById('custOpeningBalance').value = '0';
+        alert('গ্রাহক সফলভাবে যোগ করা হয়েছে');
+        populateCustSelects();
+    }
+
+    function deleteCustomer(custId) {
+        if (!confirm('এই গ্রাহক এবং তার সমস্ত হিসাব মুছে ফেলতে চান?')) return;
+        appData.customers = appData.customers.filter(c => c.id != custId);
+        appData.transactions = appData.transactions.filter(t => t.custId != custId);
+        saveData();
+        renderCustList();
+        populateCustSelects();
+        alert('গ্রাহক সফলভাবে মুছে ফেলা হয়েছে');
+    }
+
+    function deleteTransaction(txnId) {
+        if (!confirm('এই লেনদেনের হিসাবটি মুছে ফেলতে চান?')) return;
+        appData.transactions = appData.transactions.filter(t => t.id != txnId);
+        saveData();
+        renderCustList();
+        renderRep();
+        const detName = document.getElementById('detCustName').innerText;
+        const cust = appData.customers.find(c => c.name === detName);
+        if (cust) showCustDetails(cust.id);
+        alert('লেনদেনটি মুছে ফেলা হয়েছে');
+    }
+
+    function populateCustSelects() {
+        const s1 = document.getElementById('dueCustSelect');
+        const s2 = document.getElementById('payCustSelect');
+        s1.innerHTML = '<option value="">গ্রাহক নির্বাচন করুন</option>';
+        s2.innerHTML = '<option value="">গ্রাহক নির্বাচন করুন</option>';
+
+        appData.customers.forEach(c => {
+            s1.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            s2.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+    }
+
+    function getCustomerDue(custId) {
+        const cust = appData.customers.find(c => c.id == custId);
+        let total = cust ? (cust.openingBalance || 0) : 0;
+        appData.transactions.filter(t => t.custId == custId).forEach(t => {
+            total += (t.dueAmount || 0);
+        });
+        return total;
+    }
+
+    function addItemRow() {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `
+            <input type="text" placeholder="পণ্যের নাম" class="item-name">
+            <input type="number" placeholder="দাম" class="item-price" oninput="calculateDueSummary()">
+            <input type="number" placeholder="পরিমাণ" class="item-qty" value="1" oninput="calculateDueSummary()">
+        `;
+        document.getElementById('itemsContainer').appendChild(div);
+    }
+
+    function calculateDueSummary() {
+        const custId = document.getElementById('dueCustSelect').value;
+        let bill = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const p = parseFloat(row.querySelector('.item-price').value) || 0;
+            const q = parseFloat(row.querySelector('.item-qty').value) || 0;
+            bill += (p * q);
+        });
+
+        const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+        const currentDue = Math.max(0, bill - paid);
+        const prevDue = custId ? getCustomerDue(custId) : 0;
+
+        document.getElementById('lblTotalBill').innerText = bill;
+        document.getElementById('lblCurrentDue').innerText = currentDue;
+        document.getElementById('lblPreviousDue').innerText = prevDue;
+        document.getElementById('lblFinalDue').innerText = prevDue + currentDue;
+    }
+
+    function saveDueTransaction() {
+        const custId = document.getElementById('dueCustSelect').value;
+        if (!custId) return alert('গ্রাহক নির্বাচন করুন');
+
+        const date = document.getElementById('dueDate').value;
+        const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+        const payer = document.getElementById('payerName').value.trim();
+        const receiver = document.getElementById('receiverName').value.trim();
+
+        let items = [];
+        let bill = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const name = row.querySelector('.item-name').value.trim();
+            const p = parseFloat(row.querySelector('.item-price').value) || 0;
+            const q = parseFloat(row.querySelector('.item-qty').value) || 0;
+            if (name && p > 0) {
+                items.push({ name, price: p, qty: q, total: p * q });
+                bill += (p * q);
+            }
+        });
+
+        if (items.length === 0) return alert('কমপক্ষে একটি পণ্যের সঠিক তথ্য দিন');
+
+        const dueAmount = bill - paid;
+
+        const txn = {
+            id: Date.now(),
+            type: 'sale',
+            custId: parseInt(custId),
+            date,
+            items,
+            billTotal: bill,
+            paidAmount: paid,
+            dueAmount: dueAmount,
+            payerName: payer,
+            receiverName: receiver
+        };
+
+        appData.transactions.push(txn);
+        saveData();
+        alert('হিসাব সংরক্ষণ করা হয়েছে');
+
+        document.getElementById('itemsContainer').innerHTML = `
+            <div class="item-row">
+                <input type="text" placeholder="পণ্যের নাম" class="item-name">
+                <input type="number" placeholder="দাম" class="item-price" oninput="calculateDueSummary()">
+                <input type="number" placeholder="পরিমাণ" class="item-qty" value="1" oninput="calculateDueSummary()">
+            </div>`;
+        document.getElementById('paidAmount').value = '0';
+        document.getElementById('payerName').value = '';
+        document.getElementById('receiverName').value = '';
+        calculateDueSummary();
+    }
+
+    function updatePayPreviousDue() {
+        const custId = document.getElementById('payCustSelect').value;
+        const prev = custId ? getCustomerDue(custId) : 0;
+        document.getElementById('lblPayPrevDue').innerText = prev;
+        updatePaySummary();
+    }
+
+    function updatePaySummary() {
+        const prev = parseFloat(document.getElementById('lblPayPrevDue').innerText) || 0;
+        const pay = parseFloat(document.getElementById('payAmount').value) || 0;
+        document.getElementById('lblPayAfterDue').innerText = prev - pay;
+    }
+
+    function savePayment() {
+        const custId = document.getElementById('payCustSelect').value;
+        if (!custId) return alert('গ্রাহক নির্বাচন করুন');
+
+        const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+        if (amount <= 0) return alert('সঠিক জমার পরিমাণ দিন');
+
+        const date = document.getElementById('payDate').value;
+        const payer = document.getElementById('payPayerName').value.trim();
+        const receiver = document.getElementById('payReceiverName').value.trim();
+
+        const txn = {
+            id: Date.now(),
+            type: 'payment',
+            custId: parseInt(custId),
+            date,
+            paidAmount: amount,
+            dueAmount: -amount,
+            payerName: payer,
+            receiverName: receiver
+        };
+
+        appData.transactions.push(txn);
+        saveData();
+        alert('জমা সংরক্ষণ করা হয়েছে');
+        document.getElementById('payAmount').value = '';
+        document.getElementById('payPayerName').value = '';
+        document.getElementById('payReceiverName').value = '';
+        updatePayPreviousDue();
+    }
+
+    function renderCustList() {
+        const q = document.getElementById('searchCust').value.toLowerCase();
+        const ul = document.getElementById('custListUl');
+        ul.innerHTML = '';
+
+        const filtered = appData.customers.filter(c => c.name.toLowerCase().includes(q));
+        if (filtered.length === 0) {
+            ul.innerHTML = '<li style="text-align:center; padding:15px; color:#999;">কোনো গ্রাহক পাওয়া যায়নি</li>';
+            return;
+        }
+
+        filtered.forEach(c => {
+            const due = getCustomerDue(c.id);
+            const dueHtml = due > 0 
+                ? `<span class="due-text">বাকি ৳ ${due}</span>`
+                : `<span class="no-due-text">বাকি নেই</span>`;
+
+            ul.innerHTML += `
+                <li class="cust-item">
+                    <span style="flex:1; cursor:pointer;" onclick="showCustDetails(${c.id})">${c.name} (${dueHtml})</span>
+                    <button class="btn-danger" onclick="deleteCustomer(${c.id})">রিমুভ</button>
+                </li>
+            `;
+        });
+    }
+
+    function showCustDetails(custId) {
+        const cust = appData.customers.find(c => c.id == custId);
+        if (!cust) return;
+
+        document.getElementById('detCustName').innerText = cust.name;
+        document.getElementById('detCustPhone').innerText = cust.phone ? `ফোন: ${cust.phone}` : '';
+        document.getElementById('detCustOpening').innerText = cust.openingBalance || 0;
+        document.getElementById('detCustDue').innerText = getCustomerDue(cust.id);
+
+        const txns = appData.transactions.filter(t => t.custId == custId).sort((a,b) => b.id - a.id);
+        const container = document.getElementById('detHistoryList');
+        container.innerHTML = '';
+
+        if (txns.length === 0) {
+            container.innerHTML = '<p style="color:#888;">কোনো লেনদেনের ইতিহাস নেই</p>';
+        } else {
+            txns.forEach(t => {
+                if (t.type === 'sale') {
+                    const itemDesc = t.items.map(i => `${i.name} (${i.qty}টি - ৳${i.price})`).join(', ');
+                    container.innerHTML += `
+                        <div class="receipt-card">
+                            <div class="receipt-header">
+                                <span>বিক্রি ও বাকি রসিদ (${t.date})</span>
+                                <div>
+                                    <span class="due-text" style="margin-right:8px;">বাকি: ৳ ${t.dueAmount}</span>
+                                    <button class="btn-danger" onclick="deleteTransaction(${t.id})">ডিলিট</button>
+                                </div>
+                            </div>
+                            <div class="receipt-row"><span>পণ্যসমূহ:</span> <span>${itemDesc}</span></div>
+                            <div class="receipt-row"><span>মোট বিল:</span> <span>৳ ${t.billTotal}</span></div>
+                            <div class="receipt-row"><span>জমা প্রদান:</span> <span>৳ ${t.paidAmount}</span></div>
+                            <div class="receipt-row"><span>টাকা দিল:</span> <span>${t.payerName || '-'}</span></div>
+                            <div class="receipt-row"><span>জমা রাখল:</span> <span>${t.receiverName || '-'}</span></div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML += `
+                        <div class="receipt-card">
+                            <div class="receipt-header">
+                                <span>টাকা জমা রসিদ (${t.date})</span>
+                                <div>
+                                    <span class="no-due-text" style="margin-right:8px;">জমা: ৳ ${t.paidAmount}</span>
+                                    <button class="btn-danger" onclick="deleteTransaction(${t.id})">ডিলিট</button>
+                                </div>
+                            </div>
+                            <div class="receipt-row"><span>টাকা দিল:</span> <span>${t.payerName || '-'}</span></div>
+                            <div class="receipt-row"><span>জমা রাখল:</span> <span>${t.receiverName || '-'}</span></div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        document.getElementById('listSubTab').style.display = 'none';
+        document.getElementById('detailSubTab').style.display = 'block';
+    }
+
+    function hideCustDetails() {
+        document.getElementById('listSubTab').style.display = 'block';
+        document.getElementById('detailSubTab').style.display = 'none';
+    }
+
+    function renderRep() {
+        const selectedDate = document.getElementById('reportDate').value;
+        const txns = appData.transactions.filter(t => t.date === selectedDate);
+
+        let sales = 0;
+        let paid = 0;
+        let due = 0;
+
+        txns.forEach(t => {
+            if (t.type === 'sale') {
+                sales += (t.billTotal || 0);
+                paid += (t.paidAmount || 0);
+                due += (t.dueAmount || 0);
+            } else if (t.type === 'payment') {
+                paid += (t.paidAmount || 0);
+                due -= (t.paidAmount || 0);
+            }
+        });
+
+        document.getElementById('repTotalSales').innerText = sales;
+        document.getElementById('repTotalPaid').innerText = paid;
+        document.getElementById('repTotalDue').innerText = due;
+
+        const listContainer = document.getElementById('repTxnDetailsList');
+        listContainer.innerHTML = '';
+
+        if (txns.length === 0) {
+            listContainer.innerHTML = '<p style="text-align:center; color:#888; padding:10px;">আজকের কোনো লেনদেন পাওয়া যায়নি</p>';
+            return;
+        }
+
+        txns.forEach(t => {
+            const cust = appData.customers.find(c => c.id == t.custId);
+            const custName = cust ? cust.name : 'অজানা গ্রাহক';
+
+            if (t.type === 'sale') {
+                const itemSummary = t.items ? t.items.map(i => `${i.name} (${i.qty}টি - ৳${i.price})`).join(', ') : '';
+                listContainer.innerHTML += `
+                    <div class="receipt-card">
+                        <div class="receipt-header">
+                            <span>গ্রাহক: ${custName}</span>
+                            <div>
+                                <span class="due-text" style="margin-right:8px;">বাকি: ৳ ${t.dueAmount}</span>
+                                <button class="btn-danger" onclick="deleteTransaction(${t.id})">ডিলিট</button>
+                            </div>
+                        </div>
+                        <div class="receipt-row"><span>পণ্যসমূহ:</span> <span>${itemSummary}</span></div>
+                        <div class="receipt-row"><span>মোট বিল:</span> <span>৳ ${t.billTotal}</span></div>
+                        <div class="receipt-row"><span>জমা প্রদান:</span> <span>৳ ${t.paidAmount}</span></div>
+                        <div class="receipt-row"><span>টাকা দিল:</span> <span>${t.payerName || '-'}</span></div>
+                        <div class="receipt-row"><span>জমা রাখল:</span> <span>${t.receiverName || '-'}</span></div>
+                    </div>
+                `;
+            } else if (t.type === 'payment') {
+                listContainer.innerHTML += `
+                    <div class="receipt-card">
+                        <div class="receipt-header">
+                            <span>গ্রাহক: ${custName} (জমা)</span>
+                            <div>
+                                <span class="no-due-text" style="margin-right:8px;">জমা: ৳ ${t.paidAmount}</span>
+                                <button class="btn-danger" onclick="deleteTransaction(${t.id})">ডিলিট</button>
+                            </div>
+                        </div>
+                        <div class="receipt-row"><span>টাকা দিল:</span> <span>${t.payerName || '-'}</span></div>
+                        <div class="receipt-row"><span>জমা রাখল:</span> <span>${t.receiverName || '-'}</span></div>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    function downloadExcelReport() {
+        if (appData.customers.length === 0 && appData.transactions.length === 0) {
+            alert('ডাউনলোড করার মতো কোনো হিসাব নেই!');
+            return;
+        }
+
+        let custRows = appData.customers.map(c => ({
+            "গ্রাহকের নাম": c.name,
+            "মোবাইল নম্বর": c.phone || 'নেই',
+            "প্রারম্ভিক বকেয়া (৳)": c.openingBalance || 0,
+            "বর্তমান মোট বাকি (৳)": getCustomerDue(c.id)
+        }));
+
+        let txnRows = [];
+        appData.transactions.forEach(t => {
+            const cust = appData.customers.find(c => c.id == t.custId);
+            const custName = cust ? cust.name : 'অজানা গ্রাহক';
+            
+            if (t.type === 'sale') {
+                let itemsDesc = t.items ? t.items.map(i => `${i.name} (${i.qty}টি x ৳${i.price})`).join(', ') : '';
+                txnRows.push({
+                    "তারিখ": t.date,
+                    "গ্রাহকের নাম": custName,
+                    "লেনদেনের ধরন": "বিক্রি ও বাকি",
+                    "পণ্যের বিবরণ": itemsDesc,
+                    "মোট বিল (৳)": t.billTotal,
+                    "জমা প্রদান (৳)": t.paidAmount,
+                    "বাকি (৳)": t.dueAmount,
+                    "টাকা দিল যিনি": t.payerName || '-',
+                    "টাকা রাখলেন যিনি": t.receiverName || '-'
+                });
+            } else {
+                txnRows.push({
+                    "তারিখ": t.date,
+                    "গ্রাহকের নাম": custName,
+                    "লেনদেনের ধরন": "নগদ জমা",
+                    "পণ্যের বিবরণ": "-",
+                    "মোট বিল (৳)": 0,
+                    "জমা প্রদান (৳)": t.paidAmount,
+                    "বাকি (৳)": -t.paidAmount,
+                    "টাকা দিল যিনি": t.payerName || '-',
+                    "টাকা রাখলেন যিনি": t.receiverName || '-'
+                });
+            }
+        });
+
+        const wb = XLSX.utils.book_new();
+        const wsCust = XLSX.utils.json_to_sheet(custRows);
+        XLSX.utils.book_append_sheet(wb, wsCust, "গ্রাহক তালিকা");
+
+        if (txnRows.length > 0) {
+            const wsTxn = XLSX.utils.json_to_sheet(txnRows);
+            XLSX.utils.book_append_sheet(wb, wsTxn, "লেনদেনের ইতিহাস");
+        }
+
+        XLSX.writeFile(wb, `bakery_ledger_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+</script>
+</body>
+</html>
